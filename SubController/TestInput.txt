@@ -1,0 +1,6 @@
+forward 1
+up 100
+down 20000
+up 100
+forward -1
+down 3
