@@ -14,14 +14,14 @@ createVentLine x1 x2 x3 x4 = VentLine (Coordinate x1 x2) (Coordinate x3 x4)
 
 coordinates :: VentLine -> [Coordinate]
 coordinates (VentLine (Coordinate x1 y1) (Coordinate x2 y2))
-  | x1 == x2 && y1 <= y2 = map (\yVal -> Coordinate x1 yVal) [y1..y2]
-  | x1 == x2 && y2 <= y1 = map (\yVal -> Coordinate x1 yVal) [y2..y1]
-  | y1 == y2 && x1 <= x2 = map (\xVal -> Coordinate xVal y1) [x1..x2]
-  | y1 == y2 && x2 <= x1 = map (\xVal -> Coordinate xVal y1) [x2..x1]
-  | x1 <= x2 && y1 <= y2 = map fromPair (zip [x1..x2] [y1..y2])
-  | x1 <= x2 && y2 <= y1 = map fromPair (zip [x1..x2] (reverse [y2..y1]))
-  | x2 <= x1 && y1 <= y2 = map fromPair (zip (reverse [x2..x1]) [y1..y2])
-  | otherwise = map fromPair (zip (reverse [x2..x1]) (reverse [y2..y1]))
+  | x1 == x2 && y1 <= y2 = map (Coordinate x1) [y1..y2]
+  | x1 == x2 && y2 <= y1 = map (Coordinate x1) [y2..y1]
+  | y1 == y2 && x1 <= x2 = map (`Coordinate` y1) [x1..x2]
+  | y1 == y2 && x2 <= x1 = map (`Coordinate` y1) [x2..x1]
+  | x1 <= x2 && y1 <= y2 = zipWith (curry fromPair) [x1..x2] [y1..y2]
+  | x1 <= x2 && y2 <= y1 = zipWith (curry fromPair) [x1..x2] (reverse [y2..y1])
+  | x2 <= x1 && y1 <= y2 = zipWith (curry fromPair) (reverse [x2..x1]) [y1..y2]
+  | otherwise = zipWith (curry fromPair) (reverse [x2..x1]) (reverse [y2..y1])
 
 type Grid = Map Coordinate Int
 
@@ -39,11 +39,11 @@ increment coordinate grid =
 
 applyVentLine :: VentLine -> Grid -> Grid
 applyVentLine ventLine grid =
-  foldl (\g c -> increment c g) grid (coordinates ventLine)
+  foldl (flip increment) grid (coordinates ventLine)
 
 applyVentLines :: [VentLine] -> Grid -> Grid
-applyVentLines [] grid = grid
-applyVentLines (next:remaining) grid = applyVentLines remaining $ applyVentLine next grid
+applyVentLines remaining grid
+  = foldl (flip applyVentLine) grid remaining
 
 dangerCount :: Grid -> Int
-dangerCount grid = Data.Map.size $ Data.Map.filter (\val -> val > 1) grid
+dangerCount grid = Data.Map.size $ Data.Map.filter (> 1) grid
